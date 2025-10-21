@@ -11,7 +11,7 @@ except ImportError:
     DIFFUSERS_AVAILABLE = False
 
 
-@unittest.skipUnless(DIFFUSERS_AVAILABLE, "diffusers doesn't install")
+@unittest.skipUnless(DIFFUSERS_AVAILABLE, "diffusers not installed")
 class TestImageToImagePipeline(unittest.TestCase):
 
     @classmethod
