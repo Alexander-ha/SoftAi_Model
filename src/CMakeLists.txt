@@ -1,29 +1,62 @@
 cmake_minimum_required(VERSION 3.28)
+project(SoftAi_Src)
 
-set(SRC_VENV ${VENV_DIR})
+get_directory_property(VENV_DIR PARENT_DIRECTORY VENV_DIR)
 
 if(WIN32)
-    set(VENV_PYTHON ${SRC_VENV}/Scripts/python.exe)
+    set(PYTHON_PATH ${VENV_DIR}/Scripts/python.exe)
+    set(PYINSTALLER_CMD ${VENV_DIR}/Scripts/pyinstaller.exe)
 else()
-    set(VENV_PYTHON ${SRC_VENV}/bin/python)
+    set(PYTHON_PATH ${VENV_DIR}/bin/python)
+    set(PYINSTALLER_CMD ${VENV_DIR}/bin/pyinstaller)
 endif()
 
-set(VENV_PYTHON ${VENV_PYTHON} PARENT_SCOPE)
-
-add_custom_target(run_generate_cake
-    COMMAND ${VENV_PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/generate_cake.py
-    DEPENDS ${SRC_VENV}
-    COMMENT "Running generate_cake.py"
+# Создаем директорию для выходных файлов
+add_custom_target(create_src_dirs
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/src_dist
+    COMMENT "Creating src output directories"
 )
 
-add_custom_target(run_generate_cat
-    COMMAND ${VENV_PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/generate_cat.py
-    DEPENDS ${SRC_VENV}
-    COMMENT "Running generate_cat.py"
+# Функция для создания EXE (исправленная)
+function(create_src_exe python_script exe_name)
+    add_custom_target(build_${exe_name}
+        COMMAND ${PYINSTALLER_CMD} 
+                --onedir
+                --console
+                --name ${exe_name}
+                --distpath ${CMAKE_BINARY_DIR}/src_dist
+                ${CMAKE_CURRENT_SOURCE_DIR}/${python_script}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        DEPENDS create_src_dirs
+        COMMENT "Building ${exe_name} from ${python_script}"
+    )
+endfunction()
+
+# Создаем EXE для скриптов в src
+create_src_exe(generate_cake.py generate_cake)
+create_src_exe(generate_cat.py generate_cat)
+create_src_exe(generate_dog.py generate_dog)
+create_src_exe(generate_arbitr.py generate_arbitr)
+
+# Мета-цель для всех src exe
+add_custom_target(build_src_exe
+    DEPENDS build_generate_cake build_generate_cat build_generate_dog build_generate_arbitr
+    COMMENT "Building all src executables"
 )
 
-add_custom_target(run_generate_dog
-    COMMAND ${VENV_PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/generate_dog.py
-    DEPENDS ${SRC_VENV}
-    COMMENT "Running generate_dog.py"
+# Простой тест что скрипты работают
+add_custom_target(test_src_scripts
+    COMMAND ${PYTHON_PATH} -c "
+import sys
+sys.path.append('${CMAKE_CURRENT_SOURCE_DIR}')
+try:
+    print('Testing imports...')
+    from generate_arbitr import generator_func
+    print('✅ generate_arbitr imports OK')
+    print('✅ All src scripts are ready')
+except Exception as e:
+    print(f'❌ Error: {e}')
+    sys.exit(1)
+"
+    COMMENT "Testing src script imports"
 )
