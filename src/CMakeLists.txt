@@ -1,19 +1,29 @@
+cmake_minimum_required(VERSION 3.28)
 
-set(SRC_VENV ${CMAKE_BINARY_DIR}/src) #Setting source directory and venv 
+set(SRC_VENV ${VENV_DIR})
 
-create_venv(${SRC_VENV} ${CMAKE_SOURCE_DIR}/src/requirements.txt) #Creating venv according to our imports
+if(WIN32)
+    set(VENV_PYTHON ${SRC_VENV}/Scripts/python.exe)
+else()
+    set(VENV_PYTHON ${SRC_VENV}/bin/python)
+endif()
+
+set(VENV_PYTHON ${VENV_PYTHON} PARENT_SCOPE)
 
 add_custom_target(run_generate_cake
-    COMMAND ${SRC_VENV}/bin/python ${CMAKE_SOURCE_DIR}/src/generate_cake.py
+    COMMAND ${VENV_PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/generate_cake.py
     DEPENDS ${SRC_VENV}
-) ## Add target to exec img to img 
+    COMMENT "Running generate_cake.py"
+)
 
 add_custom_target(run_generate_cat
-    COMMAND ${SRC_VENV}/bin/python ${CMAKE_SOURCE_DIR}/src/generate_cat.py
+    COMMAND ${VENV_PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/generate_cat.py
     DEPENDS ${SRC_VENV}
-) ## Add target to exec txt to img 
+    COMMENT "Running generate_cat.py"
+)
 
 add_custom_target(run_generate_dog
-    COMMAND ${SRC_VENV}/bin/python ${CMAKE_SOURCE_DIR}/src/generate_dog.py
+    COMMAND ${VENV_PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/generate_dog.py
     DEPENDS ${SRC_VENV}
-)  ## Add target to exec inpainting
+    COMMENT "Running generate_dog.py"
+)
