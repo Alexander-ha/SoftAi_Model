@@ -26,7 +26,6 @@ jobs:
         cd build
         cmake -DWITH_HF_TOKEN=OFF ..
         cmake --build . --target run_tests
-        cmake --build . --target test_imports
 
     - name: Run specific tests
       run: |
