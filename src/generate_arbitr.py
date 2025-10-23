@@ -1,101 +1,46 @@
-from diffusers import AutoPipelineForText2Image
-import torch
-import sys
-import os
+# Этот файл больше не используется - виртуальное окружение создается в корневом CMakeLists.txt
+# cmake_minimum_required(VERSION 3.28)
+# project(SoftAi_Src)
 
-def generator_func(prompt, path_to_save, seed=37):
-    try:
-        print("Loading model...")
-        
-        hf_token = None
-        token_files = [
-            os.path.join(os.path.dirname(__file__), '..', 'venv', 'hf_token.txt'),
-            os.path.join(os.path.dirname(__file__), '.huggingface', 'token'),
-            os.path.expanduser('~/.huggingface/token')
-        ]
-        
-        for token_file in token_files:
-            if os.path.exists(token_file):
-                with open(token_file, 'r') as f:
-                    hf_token = f.read().strip()
-                print("Using Hugging Face token from file")
-                break
-        
-        if not hf_token and 'HUGGINGFACE_HUB_TOKEN' in os.environ:
-            hf_token = os.environ['HUGGINGFACE_HUB_TOKEN']
-            print("Using Hugging Face token from environment")
-        
-        if torch.cuda.is_available():
-            device = "cuda"
-            torch_dtype = torch.float16
-            print("Using CUDA")
-        else:
-            device = "cpu" 
-            torch_dtype = torch.float32
-            print("Using CPU")
-        
-        print("Downloading model...")
-        
-        if hf_token:
-            pipe = AutoPipelineForText2Image.from_pretrained(
-                "runwayml/stable-diffusion-v1-5",
-                torch_dtype=torch_dtype,
-                use_safetensors=True,
-                use_auth_token=hf_token
-            )
-        else:
-            pipe = AutoPipelineForText2Image.from_pretrained(
-                "runwayml/stable-diffusion-v1-5", 
-                torch_dtype=torch_dtype,
-                use_safetensors=True
-            )
-        
-        pipe = pipe.to(device)
-        print("Model loaded successfully")
+# get_directory_property(VENV_DIR PARENT_DIRECTORY VENV_DIR)
 
-        print("Generating image...")
-        generator = torch.Generator(device=device).manual_seed(seed)
-        
-        image = pipe(
-            prompt=prompt,
-            generator=generator,
-            num_inference_steps=20,
-            height=512,
-            width=512
-        ).images[0]
-        
-        print(f"Saving image to {path_to_save}")
-        image.save(path_to_save)
-        print("Image saved successfully")
-        
-    except torch.cuda.OutOfMemoryError:
-        print("CUDA out of memory! Trying with smaller image...")
-        try:
-            image = pipe(
-                prompt=prompt,
-                generator=generator,
-                num_inference_steps=15,
-                height=256,
-                width=256
-            ).images[0]
-            image.save(path_to_save)
-            print("Image generated with smaller size")
-        except Exception as e2:
-            print(f"Generation failed: {e2}")
-            sys.exit(1)
-    except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
+# if(WIN32)
+#     set(PYTHON_PATH ${VENV_DIR}/Scripts/python.exe)
+#     set(NUITKA_CMD ${VENV_DIR}/Scripts/nuitka)
+#     set(EXE_EXT ".exe")
+# else()
+#     set(PYTHON_PATH ${VENV_DIR}/bin/python)
+#     set(NUITKA_CMD ${VENV_DIR}/bin/nuitka)
+#     set(EXE_EXT "")
+# endif()
 
-def test_imports():
-    try:
-        import torch
-        import diffusers
-        print("All imports successful")
-        return True
-    except ImportError as e:
-        print(f"Import error: {e}")
-        return False
+# # Функция для создания exe с Nuitka
+# function(create_src_exe python_script exe_name)
+#     add_custom_target(build_${exe_name}
+#         COMMAND ${NUITKA_CMD} 
+#                 --standalone
+#                 --onefile
+#                 --windows-console-mode=attach
+#                 --output-dir=${CMAKE_BINARY_DIR}/src_dist
+#                 --output-filename=${exe_name}${EXE_EXT}
+#                 --include-package=torch
+#                 --include-package=diffusers
+#                 --include-package=transformers
+#                 --include-package=PIL
+#                 --plugin-enable=pylint-warnings
+#                 --assume-yes-for-downloads
+#                 ${CMAKE_CURRENT_SOURCE_DIR}/${python_script}
+#         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+#         COMMENT "Building ${exe_name}${EXE_EXT} with Nuitka"
+#     )
+# endfunction()
 
-if __name__ == "__main__":
-    test_imports()
+# create_src_exe(generate_cake.py generate_cake)
+# create_src_exe(generate_cat.py generate_cat)
+# create_src_exe(generate_dog.py generate_dog)
+# create_src_exe(generate_arbitr.py generate_arbitr)
+
+# add_custom_target(build_src_exe
+#     DEPENDS build_generate_cake build_generate_cat build_generate_dog build_generate_arbitr
+#     COMMENT "Building all src executables"
+# )

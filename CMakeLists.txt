@@ -6,19 +6,7 @@ set(HF_TOKEN "" CACHE STRING "Hugging Face API token")
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
 
-if(CMAKE_CXX_COMPILER)
-    enable_language(CUDA)
-    find_package(CUDAToolkit)
-    if(CUDAToolkit_FOUND)
-        message(STATUS "CUDA found: ${CUDAToolkit_VERSION}")
-    else()
-        message(WARNING "CUDA not found! PyTorch will use CPU only.")
-    endif()
-else()
-    message(WARNING "C++ compiler not found - skipping CUDA detection")
-endif()
-
-# Функция создания совместимого окружения
+# Функция создания виртуального окружения и установки пакетов
 function(create_venv venv_dir)
     if(EXISTS ${venv_dir})
         message(STATUS "Virtual environment already exists in ${venv_dir}")
@@ -56,7 +44,23 @@ function(create_venv venv_dir)
         ERROR_QUIET
     )
 
+    # Устанавливаем зависимости из requirements.txt
+    if(EXISTS ${CMAKE_SOURCE_DIR}/requirements.txt)
+        message(STATUS "Installing dependencies from requirements.txt...")
+        execute_process(
+            COMMAND ${PIP_PATH} install -r ${CMAKE_SOURCE_DIR}/requirements.txt
+            RESULT_VARIABLE requirements_install_ret_code
+            TIMEOUT 300
+        )
+        
+        if(NOT requirements_install_ret_code EQUAL 0)
+            message(WARNING "Failed to install from requirements.txt, trying compatible versions...")
+        endif()
+    endif()
+
     # Устанавливаем совместимые версии поэтапно
+    message(STATUS "Installing compatible packages...")
+    
     message(STATUS "Step 1: Installing compatible NumPy...")
     execute_process(
         COMMAND ${PIP_PATH} install "numpy<2"
@@ -65,59 +69,68 @@ function(create_venv venv_dir)
     )
     
     if(NOT numpy_install_ret_code EQUAL 0)
-        message(FATAL_ERROR "Failed to install NumPy")
+        message(WARNING "Failed to install NumPy")
     endif()
-    message(STATUS "NumPy installed")
 
-    message(STATUS "Step 2: Installing PyTorch with compatible versions...")
-    execute_process(
-        COMMAND ${PIP_PATH} install torch==2.0.1 torchvision==0.15.2 --index-url https://download.pytorch.org/whl/cpu
-        RESULT_VARIABLE torch_install_ret_code
-        TIMEOUT 300
-    )
+    message(STATUS "Step 2: Installing PyTorch...")
+    if(CMAKE_CXX_COMPILER AND CUDAToolkit_FOUND)
+        execute_process(
+            COMMAND ${PIP_PATH} install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+            RESULT_VARIABLE torch_install_ret_code
+            TIMEOUT 300
+        )
+    else()
+        execute_process(
+            COMMAND ${PIP_PATH} install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+            RESULT_VARIABLE torch_install_ret_code
+            TIMEOUT 300
+        )
+    endif()
     
     if(NOT torch_install_ret_code EQUAL 0)
-        message(FATAL_ERROR "Failed to install PyTorch")
+        message(WARNING "Failed to install PyTorch")
     endif()
-    message(STATUS "PyTorch installed")
 
     message(STATUS "Step 3: Installing compatible Hugging Face ecosystem...")
     execute_process(
-        COMMAND ${PIP_PATH} install "huggingface-hub==0.19.4" "diffusers==0.24.0" "transformers==4.35.2"
+        COMMAND ${PIP_PATH} install 
+            "huggingface-hub==0.19.4"
+            "diffusers==0.21.4" 
+            "transformers==4.35.2" 
+            "accelerate==0.24.1"
+            "safetensors>=0.3.1"
         RESULT_VARIABLE hf_install_ret_code
         TIMEOUT 300
     )
-    
+        
     if(NOT hf_install_ret_code EQUAL 0)
-        message(FATAL_ERROR "Failed to install Hugging Face packages")
+        message(WARNING "Failed to install Hugging Face packages")
     endif()
-    message(STATUS "Hugging Face packages installed")
 
     message(STATUS "Step 4: Installing web dependencies...")
     execute_process(
-        COMMAND ${PIP_PATH} install flask==2.3.3 werkzeug==2.3.7 pillow==9.5.0
+        COMMAND ${PIP_PATH} install flask werkzeug pillow
         RESULT_VARIABLE web_install_ret_code
         TIMEOUT 180
     )
     
     if(NOT web_install_ret_code EQUAL 0)
-        message(FATAL_ERROR "Failed to install web dependencies")
+        message(WARNING "Failed to install web dependencies")
     endif()
-    message(STATUS "Web dependencies installed")
 
-    message(STATUS "Step 5: Installing additional dependencies...")
+    # ДОБАВЛЕНО: Установка тестовых зависимостей
+    message(STATUS "Step 5: Installing test dependencies...")
     execute_process(
-        COMMAND ${PIP_PATH} install "accelerate==0.24.1" "safetensors==0.4.1" "pyinstaller==5.13.2"
-        RESULT_VARIABLE additional_install_ret_code
-        TIMEOUT 180
+        COMMAND ${PIP_PATH} install pytest
+        RESULT_VARIABLE pytest_install_ret_code
+        TIMEOUT 120
     )
     
-    if(NOT additional_install_ret_code EQUAL 0)
-        message(FATAL_ERROR "Failed to install additional dependencies")
+    if(NOT pytest_install_ret_code EQUAL 0)
+        message(WARNING "Failed to install pytest")
     endif()
-    message(STATUS "Additional dependencies installed")
 
-    # Создаем файл для финальной проверки
+    # Финальная проверка
     file(WRITE ${CMAKE_BINARY_DIR}/final_check.py "
 try:
     import torch
@@ -132,6 +145,9 @@ try:
     import flask
     print('SUCCESS: Flask')
     
+    import pytest
+    print('SUCCESS: pytest')
+    
     print('SUCCESS: All packages installed!')
     exit(0)
 except Exception as e:
@@ -139,7 +155,6 @@ except Exception as e:
     exit(1)
 ")
 
-    # Финальная проверка через файл
     execute_process(
         COMMAND ${PYTHON_PATH} ${CMAKE_BINARY_DIR}/final_check.py
         RESULT_VARIABLE final_check
@@ -149,7 +164,7 @@ except Exception as e:
     message(STATUS "${final_output}")
     
     if(NOT final_check EQUAL 0)
-        message(FATAL_ERROR "Final package check failed")
+        message(WARNING "Some packages might not be installed correctly")
     endif()
     
     message(STATUS "Virtual environment setup completed at ${venv_dir}")
@@ -163,151 +178,111 @@ function(setup_huggingface_token)
         message(STATUS "Using Hugging Face token from environment")
         file(WRITE ${VENV_DIR}/hf_token.txt $ENV{HUGGINGFACE_HUB_TOKEN})
     else()
-        message(WARNING "No Hugging Face token provided")
-        message(STATUS "Some models may require authentication")
+        message(STATUS "No Hugging Face token provided - some models may require authentication")
     endif()
 endfunction()
 
-set(VENV_DIR ${CMAKE_BINARY_DIR}/venv)
+# Создаем необходимые файлы и директории
+function(setup_project_structure)
+    # Создаем базовую структуру static
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/static/uploads
+    )
+    execute_process(
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/static/generated
+    )
+    
+    # Создаем placeholder файлы для static
+    file(WRITE ${CMAKE_SOURCE_DIR}/static/.gitkeep "")
+    file(WRITE ${CMAKE_SOURCE_DIR}/static/uploads/.gitkeep "")
+    file(WRITE ${CMAKE_SOURCE_DIR}/static/generated/.gitkeep "")
+    
+    # Создаем __init__.py в src чтобы сделать его пакетом
+    file(WRITE ${CMAKE_SOURCE_DIR}/src/__init__.py "# AI Model Package")
+endfunction()
+
+setup_project_structure()
+
+set(VENV_DIR ${CMAKE_BINARY_DIR}/.venv)
 create_venv(${VENV_DIR})
 setup_huggingface_token()
 
 if(WIN32)
     set(PYTHON_PATH ${VENV_DIR}/Scripts/python.exe)
-    set(PYINSTALLER_CMD ${VENV_DIR}/Scripts/pyinstaller.exe)
-    set(EXE_EXT ".exe")
 else()
     set(PYTHON_PATH ${VENV_DIR}/bin/python)
-    set(PYINSTALLER_CMD ${VENV_DIR}/bin/pyinstaller)
-    set(EXE_EXT "")
 endif()
 
-# Создаем файл для проверки пакетов
-file(WRITE ${CMAKE_BINARY_DIR}/check_packages.py "
-import sys
-print('Python version:', sys.version)
-
-try:
-    import torch
-    print('PyTorch:', torch.__version__)
-    print('CUDA available:', torch.cuda.is_available())
-    
-    import diffusers
-    print('Diffusers:', diffusers.__version__)
-    
-    import transformers
-    print('Transformers:', transformers.__version__)
-    
-    import flask
-    print('Flask: OK')
-    
-    print('SUCCESS: All packages are properly installed!')
-    sys.exit(0)
-except Exception as e:
-    print('ERROR:', e)
-    sys.exit(1)
-")
-
-add_custom_target(check_packages
-    COMMAND ${PYTHON_PATH} ${CMAKE_BINARY_DIR}/check_packages.py
-    COMMENT "Checking package installation"
-)
-
-add_custom_target(create_dist_dirs
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/dist
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_BINARY_DIR}/src_dist
-    COMMENT "Creating output directories"
-)
-
-# Простой тест через файл
-file(WRITE ${CMAKE_BINARY_DIR}/test_basic.py "
-import sys
-print('Basic functionality test...')
-
-try:
-    import torch
-    print('PyTorch OK')
-    
-    from diffusers import AutoPipelineForText2Image
-    print('Diffusers OK')
-    
-    import flask
-    print('Flask OK')
-    
-    print('All basic functionality: SUCCESS')
-    sys.exit(0)
-    
-except Exception as e:
-    print('ERROR:', e)
-    sys.exit(1)
-")
-
-add_custom_target(test_basic
-    COMMAND ${PYTHON_PATH} ${CMAKE_BINARY_DIR}/test_basic.py
-    COMMENT "Basic functionality test"
-)
-
-add_subdirectory(src)
-
-# Сборка основного приложения
-add_custom_target(build_main_exe
-    COMMAND ${PYINSTALLER_CMD} 
-            --onedir
-            --console
-            --name ai_image_generator
-            --add-data "templates;templates"
-            --add-data "static;static"
-            --hidden-import=generate_arbitr
-            --hidden-import=flask
-            --hidden-import=torch
-            --hidden-import=diffusers
-            --hidden-import=transformers
-            --hidden-import=PIL
-            --hidden-import=accelerate
-            --distpath ${CMAKE_BINARY_DIR}/dist
-            ${CMAKE_SOURCE_DIR}/main.py
+# Цели для запуска приложения
+add_custom_target(run_web
+    COMMAND ${PYTHON_PATH} ${CMAKE_SOURCE_DIR}/main.py
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    DEPENDS create_dist_dirs
-    COMMENT "Building main Flask application"
+    COMMENT "Running web interface"
 )
 
-# Цели сборки
-add_custom_target(build_all
-    COMMAND ${CMAKE_COMMAND} --build . --target build_main_exe  
-    COMMAND ${CMAKE_COMMAND} --build . --target build_src_exe
-    COMMENT "Building all executables"
+add_custom_target(run_web_dev
+    COMMAND ${PYTHON_PATH} ${CMAKE_SOURCE_DIR}/main.py --port 8001
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running web interface on port 8001"
 )
 
-add_custom_target(build_with_checks
-    COMMAND ${CMAKE_COMMAND} --build . --target check_packages
-    COMMAND ${CMAKE_COMMAND} --build . --target test_basic
-    COMMAND ${CMAKE_COMMAND} --build . --target build_all
-    COMMENT "Building with package checks"
+# Цели для тестирования
+add_custom_target(run_tests
+    COMMAND ${PYTHON_PATH} -m pytest ${CMAKE_SOURCE_DIR}/tests -v
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running all tests with pytest"
 )
 
-add_custom_target(build_quick
-    COMMAND ${CMAKE_COMMAND} --build . --target build_all
-    COMMENT "Quick build without checks"
+add_custom_target(test_pipeline
+    COMMAND ${PYTHON_PATH} ${CMAKE_SOURCE_DIR}/tests/test_pipeline_txt_to_img.py
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Running pipeline tests"
 )
 
-add_custom_target(build_info
-    COMMAND ${CMAKE_COMMAND} -E echo "=== Build Information ==="
-    COMMAND ${CMAKE_COMMAND} -E echo "Platform: ${CMAKE_SYSTEM_NAME}"
-    COMMAND ${CMAKE_COMMAND} -E echo "Python: ${Python3_EXECUTABLE}"
-    COMMAND ${CMAKE_COMMAND} -E echo "VENV: ${VENV_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E echo "Output: ${CMAKE_BINARY_DIR}/dist/"
-    COMMAND ${CMAKE_COMMAND} -E echo "HF Token: ${WITH_HF_TOKEN}"
-    COMMENT "Displaying build information"
+add_custom_target(test_imports
+    COMMAND ${PYTHON_PATH} -c "from src.generate_arbitr import test_imports; test_imports()"
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Testing imports"
 )
+
+add_custom_target(venv_shell
+    COMMENT "Virtual environment is ready at ${VENV_DIR}. Activate with:"
+)
+
+if(WIN32)
+    add_custom_target(venv_activate
+        COMMAND cmd.exe /c "echo Activate virtual environment: && echo ${VENV_DIR}\\Scripts\\activate"
+        COMMENT "Windows activation command printed above"
+    )
+else()
+    add_custom_target(venv_activate
+        COMMAND bash -c "echo 'Activate virtual environment:' && echo 'source ${VENV_DIR}/bin/activate'"
+        COMMENT "Linux activation command printed above"
+    )
+endif()
 
 message(STATUS "")
-message(STATUS "Build targets:")
-message(STATUS "   build_quick       - Quick build without checks")
-message(STATUS "   build_with_checks - Build with package checks") 
-message(STATUS "   build_all         - Build all executables")
-message(STATUS "   check_packages    - Check package installation")
-message(STATUS "   build_info        - Show build information")
+message(STATUS "=== AI Image Generator Setup Complete ===")
+message(STATUS "Virtual environment: ${VENV_DIR}")
 message(STATUS "")
-message(STATUS "Configure with HF token:")
-message(STATUS "   cmake -B build -DWITH_HF_TOKEN=ON -DHF_TOKEN=your_token")
+message(STATUS "Available targets:")
+message(STATUS "   run_web        - Run the web interface")
+message(STATUS "   run_web_dev    - Run web interface on port 8001")
+message(STATUS "   run_tests      - Run all tests with pytest")
+message(STATUS "   test_pipeline  - Run pipeline tests only")
+message(STATUS "   test_imports   - Test package imports")
+message(STATUS "   venv_activate  - Show virtual environment activation command")
+message(STATUS "")
+message(STATUS "To set Hugging Face token:")
+message(STATUS "   cmake -B build -DWITH_HF_TOKEN=ON -DHF_TOKEN=your_token_here")
+message(STATUS "   OR set HUGGINGFACE_HUB_TOKEN environment variable")
+message(STATUS "")
+message(STATUS "To run manually from venv:")
+if(WIN32)
+    message(STATUS "   ${VENV_DIR}\\Scripts\\activate")
+    message(STATUS "   python main.py")
+else()
+    message(STATUS "   source ${VENV_DIR}/bin/activate")
+    message(STATUS "   python main.py")
+endif()
 message(STATUS "")

@@ -1,21 +1,16 @@
-# PyTorch with CPU (совместимо с Python 3.11)
 torch==2.1.2
 torchvision==0.16.2
 --index-url https://download.pytorch.org/whl/cpu
 
-# Совместимые версии для Python 3.11
 huggingface-hub>=0.20.0
 diffusers==0.26.0
 transformers==4.36.2
 
-# Веб-зависимости
 flask==3.0.0
 werkzeug==3.0.1
 pillow==10.1.0
 
-# Дополнительные зависимости
 accelerate==0.25.0
 safetensors==0.4.1
 
-# Для сборки
 pyinstaller==5.13.2

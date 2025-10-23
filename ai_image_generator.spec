@@ -1,15 +1,29 @@
+
 # -*- mode: python ; coding: utf-8 -*-
 
+import sys
+sys.setrecursionlimit(5000)
 
 block_cipher = None
 
-
 a = Analysis(
-    ['C:/Users/alexa/AISoft_model/main.py'],
+    ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('templates', 'templates'), ('static', 'static')],
-    hiddenimports=['generate_arbitr', 'flask', 'torch', 'diffusers', 'transformers', 'PIL', 'accelerate'],
+    datas=[
+        ('templates/*', 'templates'),
+        ('static/*', 'static')
+    ],
+    hiddenimports=[
+        'generate_arbitr',
+        'flask',
+        'torch',
+        'diffusers', 
+        'transformers',
+        'PIL',
+        'accelerate',
+        'huggingface_hub'
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -19,6 +33,7 @@ a = Analysis(
     cipher=block_cipher,
     noarchive=False,
 )
+
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
@@ -38,6 +53,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 )
+
 coll = COLLECT(
     exe,
     a.binaries,
@@ -46,5 +62,5 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='ai_image_generator',
+    name='ai_image_generator'
 )
