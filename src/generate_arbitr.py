@@ -100,16 +100,3 @@ def generator_func(prompt, path_to_save, seed=37):
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
-
-def test_imports():
-    try:
-        import torch
-        import diffusers
-        print("All imports successful")
-        return True
-    except ImportError as e:
-        print(f"Import error: {e}")
-        return False
-
-if __name__ == "__main__":
-    test_imports()
