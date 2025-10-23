@@ -233,17 +233,6 @@ add_custom_target(run_tests
     COMMENT "Running all tests with pytest"
 )
 
-add_custom_target(test_pipeline
-    COMMAND ${PYTHON_PATH} ${CMAKE_SOURCE_DIR}/tests/test_pipeline_txt_to_img.py
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Running pipeline tests"
-)
-
-add_custom_target(test_imports
-    COMMAND ${PYTHON_PATH} -c "from src.generate_arbitr import test_imports; test_imports()"
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    COMMENT "Testing imports"
-)
 
 add_custom_target(venv_shell
     COMMENT "Virtual environment is ready at ${VENV_DIR}. Activate with:"

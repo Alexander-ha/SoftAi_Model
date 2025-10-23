@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
-from generate_arbitr import generator_func
+from src.generate_arbitr import generator_func
 
 def check_cuda():
     cuda_available = torch.cuda.is_available()
