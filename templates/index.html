@@ -3,152 +3,592 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Image Generator</title>
+    <title>AI Image Generator | Create Amazing Art</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #f8fafc;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --error: #ef4444;
+            --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
         }
-        .container {
+
+        .app-card {
             background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            margin: 40px auto;
+            backdrop-filter: blur(10px);
         }
-        .form-group {
-            margin-bottom: 20px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        input[type="text"], input[type="number"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-        button {
-            background-color: #007bff;
+
+        .app-header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
             color: white;
-            padding: 12px 30px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .image-container {
-            margin-top: 30px;
+            padding: 30px;
             text-align: center;
         }
+
+        .app-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .app-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .app-body {
+            padding: 40px;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--secondary);
+            border-radius: 12px;
+            padding: 5px;
+            margin-bottom: 30px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .tab:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-icon {
+            color: var(--primary);
+        }
+
+        input[type="text"], 
+        input[type="number"], 
+        input[type="file"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .file-input-container {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: var(--secondary);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .file-input-label:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 16px 32px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .image-container {
+            margin-top: 40px;
+            text-align: center;
+            animation: slideUp 0.5s ease;
+        }
+
+        .image-placeholder {
+            background: var(--secondary);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 60px 20px;
+            color: var(--text-light);
+        }
+
         .generated-image {
             max-width: 100%;
             max-height: 600px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
         }
-        .error {
-            color: red;
-            margin-top: 10px;
+
+        .generated-image:hover {
+            transform: scale(1.02);
         }
-        .tabs {
+
+        .image-info {
+            background: var(--secondary);
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .image-info h3 {
+            margin-bottom: 10px;
+            color: var(--text);
             display: flex;
-            margin-bottom: 20px;
+            align-items: center;
+            gap: 10px;
         }
-        .tab {
-            padding: 10px 20px;
-            background: #eee;
-            cursor: pointer;
-            margin-right: 5px;
-            border-radius: 5px 5px 0 0;
-        }
-        .tab.active {
-            background: #007bff;
+
+        .error {
+            background: var(--error);
             color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: shake 0.5s ease;
+        }
+
+        .success {
+            background: var(--success);
+            color: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--border);
+            border-left: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .feature {
+            background: var(--secondary);
+            padding: 25px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .feature i {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        @media (max-width: 768px) {
+            .app-header h1 {
+                font-size: 2rem;
+            }
+            
+            .app-body {
+                padding: 20px;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎨 AI Image Generator</h1>
-        
-        <div class="tabs">
-            <div class="tab active" onclick="showTab('generate')">Generate from Text</div>
-            <div class="tab" onclick="showTab('upload')">Upload Image</div>
-        </div>
+        <div class="app-card">
+            <div class="app-header">
+                <h1>
+                    <i class="fas fa-robot"></i>
+                    AI Image Generator
+                </h1>
+                <p>Transform your imagination into stunning visuals with our advanced AI technology</p>
+            </div>
 
-        <div id="generate-tab">
-            <form method="POST" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label for="prompt">Enter your prompt:</label>
-                    <input type="text" id="prompt" name="prompt" 
-                           value="{{ prompt }}" 
-                           placeholder="Describe the image you want to generate..." 
-                           required>
+            <div class="app-body">
+                <div class="tabs">
+                    <div class="tab active" data-tab="generate">
+                        <i class="fas fa-magic"></i>
+                        Generate from Text
+                    </div>
+                    <div class="tab" data-tab="upload">
+                        <i class="fas fa-upload"></i>
+                        Upload Image
+                    </div>
                 </div>
-                
-                <div class="form-group">
-                    <label for="seed">Seed (optional):</label>
-                    <input type="number" id="seed" name="seed" value="37">
+
+                <!-- Generate Tab -->
+                <div id="generate-tab" class="tab-content active">
+                    <form id="generate-form" method="POST" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="prompt">
+                                <i class="fas fa-pencil-alt input-icon"></i>
+                                Describe your vision
+                            </label>
+                            <input type="text" id="prompt" name="prompt" 
+                                   value="{{ prompt }}" 
+                                   placeholder="A majestic dragon flying over a medieval castle at sunset, digital art..." 
+                                   required>
+                            <small style="color: var(--text-light); margin-top: 5px; display: block;">
+                                Be descriptive! The more details, the better the result.
+                            </small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="seed">
+                                <i class="fas fa-seedling input-icon"></i>
+                                Seed (optional)
+                            </label>
+                            <input type="number" id="seed" name="seed" value="37" 
+                                   placeholder="Enter a number for reproducible results">
+                        </div>
+                        
+                        <button type="submit" class="btn" id="generate-btn">
+                            <i class="fas fa-sparkles"></i>
+                            Generate Image
+                        </button>
+                    </form>
                 </div>
-                
-                <button type="submit">Generate Image</button>
-            </form>
-        </div>
 
-        <div id="upload-tab" style="display: none;">
-            <form method="POST" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label for="img">Upload image:</label>
-                    <input type="file" id="img" name="img" accept="image/*">
+                <!-- Upload Tab -->
+                <div id="upload-tab" class="tab-content">
+                    <form id="upload-form" method="POST" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <label for="img">
+                                <i class="fas fa-image input-icon"></i>
+                                Choose an image
+                            </label>
+                            <div class="file-input-container">
+                                <input type="file" id="img" name="img" accept="image/*" class="file-input" required>
+                                <label for="img" class="file-input-label">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <span>Click to upload or drag and drop</span>
+                                </label>
+                            </div>
+                            <small style="color: var(--text-light); margin-top: 5px; display: block;">
+                                Supports JPG, PNG, WEBP. Max size: 10MB
+                            </small>
+                        </div>
+                        <button type="submit" class="btn">
+                            <i class="fas fa-upload"></i>
+                            Upload Image
+                        </button>
+                    </form>
                 </div>
-                <button type="submit">Upload Image</button>
-            </form>
-        </div>
 
-        {% if generated_image %}
-        <div class="image-container">
-            <h2>Generated Image:</h2>
-            <img src="{{ url_for('static', filename='generated/' + generated_image) }}" 
-                 alt="Generated Image" class="generated-image">
-            <p><strong>Prompt:</strong> {{ prompt }}</p>
-        </div>
-        {% endif %}
+                <!-- Loading State -->
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <h3>Creating your masterpiece...</h3>
+                    <p>This may take a few moments</p>
+                </div>
 
-        {% if uploaded_image %}
-        <div class="image-container">
-            <h2>Uploaded Image:</h2>
-            <img src="{{ url_for('static', filename='uploads/' + uploaded_image) }}" 
-                 alt="Uploaded Image" class="generated-image">
-        </div>
-        {% endif %}
+                <!-- Results -->
+                {% if generated_image %}
+                <div class="image-container">
+                    <h2><i class="fas fa-star"></i> Your Generated Image</h2>
+                    <img src="{{ url_for('static', filename='generated/' + generated_image) }}" 
+                         alt="Generated Image" class="generated-image">
+                    <div class="image-info">
+                        <h3><i class="fas fa-info-circle"></i> Generation Details</h3>
+                        <p><strong>Prompt:</strong> {{ prompt }}</p>
+                        {% if seed %}<p><strong>Seed:</strong> {{ seed }}</p>{% endif %}
+                        <p><strong>Generated:</strong> {{ generated_time if generated_time else "Just now" }}</p>
+                    </div>
+                </div>
+                {% endif %}
 
-        {% if error %}
-        <div class="error">
-            {{ error }}
+                {% if uploaded_image %}
+                <div class="image-container">
+                    <h2><i class="fas fa-check-circle"></i> Image Uploaded Successfully</h2>
+                    <img src="{{ url_for('static', filename='uploads/' + uploaded_image) }}" 
+                         alt="Uploaded Image" class="generated-image">
+                </div>
+                {% endif %}
+
+                {% if error %}
+                <div class="error">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {{ error }}
+                </div>
+                {% endif %}
+
+                {% if not generated_image and not uploaded_image and not error %}
+                <div class="image-container">
+                    <div class="image-placeholder">
+                        <i class="fas fa-image" style="font-size: 3rem; margin-bottom: 20px; color: var(--border);"></i>
+                        <h3>Your creation will appear here</h3>
+                        <p>Generate an image or upload one to get started</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Features -->
+                <div class="features">
+                    <div class="feature">
+                        <i class="fas fa-bolt"></i>
+                        <h3>Lightning Fast</h3>
+                        <p>Generate high-quality images in seconds</p>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-palette"></i>
+                        <h3>Multiple Styles</h3>
+                        <p>Various art styles and configurations</p>
+                    </div>
+                    <div class="feature">
+                        <i class="fas fa-shield-alt"></i>
+                        <h3>Safe & Private</h3>
+                        <p>Your data and creations are protected</p>
+                    </div>
+                </div>
+            </div>
         </div>
-        {% endif %}
     </div>
 
     <script>
-        function showTab(tabName) {
-            document.getElementById('generate-tab').style.display = 'none';
-            document.getElementById('upload-tab').style.display = 'none';
-            
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
+        // Tab functionality
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.getAttribute('data-tab');
+                
+                // Update tabs
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(tabName + '-tab').classList.add('active');
             });
-            
-            document.getElementById(tabName + '-tab').style.display = 'block';
-            event.target.classList.add('active');
+        });
+
+        // Form submission loading state
+        document.getElementById('generate-form')?.addEventListener('submit', function() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('generate-btn').disabled = true;
+            document.getElementById('generate-btn').innerHTML = 
+                '<i class="fas fa-spinner fa-spin"></i> Generating...';
+        });
+
+        // File input display
+        const fileInput = document.getElementById('img');
+        const fileInputLabel = fileInput?.nextElementSibling;
+
+        fileInput?.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                fileInputLabel.innerHTML = 
+                    `<i class="fas fa-check"></i> ${this.files[0].name}`;
+            }
+        });
+
+        // Drag and drop for file upload
+        const fileInputContainer = document.querySelector('.file-input-container');
+        
+        if (fileInputContainer) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                fileInputContainer.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                fileInputContainer.addEventListener(eventName, highlight, false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                fileInputContainer.addEventListener(eventName, unhighlight, false);
+            });
+
+            function highlight() {
+                fileInputContainer.style.borderColor = 'var(--primary)';
+                fileInputContainer.style.backgroundColor = 'rgba(99, 102, 241, 0.05)';
+            }
+
+            function unhighlight() {
+                fileInputContainer.style.borderColor = 'var(--border)';
+                fileInputContainer.style.backgroundColor = '';
+            }
+
+            fileInputContainer.addEventListener('drop', handleDrop, false);
+
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
         }
     </script>
 </body>
