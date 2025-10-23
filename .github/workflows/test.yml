@@ -1,4 +1,4 @@
-name: Run Unit Tests
+name: AI Image Generator CI
 
 on: [push, pull_request]
 
@@ -13,13 +13,23 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: '3.11'
 
-    - name: Install dependencies
+    - name: Install system dependencies
       run: |
-        pip install --upgrade pip
-        pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-        pip install diffusers[torch] Pillow
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential
 
-    - name: Run tests
-      run: python -m unittest discover -v
+    - name: Build and test with CMake
+      run: |
+        mkdir -p build
+        cd build
+        cmake -DWITH_HF_TOKEN=OFF ..
+        cmake --build . --target run_tests
+        cmake --build . --target test_imports
+
+    - name: Run specific tests
+      run: |
+        cd build
+        source .venv/bin/activate
+        python -m pytest ../tests/ -v
