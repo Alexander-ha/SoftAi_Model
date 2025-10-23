@@ -102,25 +102,21 @@ cmake --build build --target build_generate_cake
 
 ### Building Docker Image
 ```bash
-docker build -t softai-model .
+docker build -t ai-image-generator .
 ```
 
 ### Running with Docker
 ```bash
-# With GPU support
-docker run --gpus all -p 8001:8001 softai-model
+docker run -p 8001:8001 -e HUGGINGFACE_HUB_TOKEN=your_token_here ai-image-generator
 
-# CPU only
-docker run -p 8001:8001 softai-model
-```
+docker run -it -p 8001:8001 -e HUGGINGFACE_HUB_TOKEN=your_token_here ai-image-generator /bin/bash
 
-## 🔐 Hugging Face Token Setup
+docker run -p 8001:8001 \
+  -e HUGGINGFACE_HUB_TOKEN=your_token_here \
+  -v $(pwd)/static/generated:/app/static/generated \
+  -v $(pwd)/static/uploads:/app/static/uploads \
+  ai-image-generator```
 
-For optimal performance, provide your Hugging Face token:
-
-### Environment Variable
-```bash
-export HUGGINGFACE_HUB_TOKEN=your_token_here
 ```
 
 ### Token File
@@ -231,3 +227,4 @@ For issues and questions:
 ---
 
 **Happy Generating! 🎨**
+
