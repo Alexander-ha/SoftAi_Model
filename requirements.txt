@@ -1,0 +1,11 @@
+torch==2.0.1
+torchvision==0.15.2
+diffusers==0.21.4
+transformers==4.33.3
+flask==2.3.3
+werkzeug==2.3.7
+pillow==9.5.0
+accelerate==0.23.0
+safetensors==0.3.3
+omegaconf==2.3.0
+pyinstaller==5.13.0

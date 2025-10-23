@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .image-container {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .generated-image {
+            max-width: 100%;
+            max-height: 600px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: #eee;
+            cursor: pointer;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab.active {
+            background: #007bff;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 AI Image Generator</h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('generate')">Generate from Text</div>
+            <div class="tab" onclick="showTab('upload')">Upload Image</div>
+        </div>
+
+        <div id="generate-tab">
+            <form method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="prompt">Enter your prompt:</label>
+                    <input type="text" id="prompt" name="prompt" 
+                           value="{{ prompt }}" 
+                           placeholder="Describe the image you want to generate..." 
+                           required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="seed">Seed (optional):</label>
+                    <input type="number" id="seed" name="seed" value="37">
+                </div>
+                
+                <button type="submit">Generate Image</button>
+            </form>
+        </div>
+
+        <div id="upload-tab" style="display: none;">
+            <form method="POST" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="img">Upload image:</label>
+                    <input type="file" id="img" name="img" accept="image/*">
+                </div>
+                <button type="submit">Upload Image</button>
+            </form>
+        </div>
+
+        {% if generated_image %}
+        <div class="image-container">
+            <h2>Generated Image:</h2>
+            <img src="{{ url_for('static', filename='generated/' + generated_image) }}" 
+                 alt="Generated Image" class="generated-image">
+            <p><strong>Prompt:</strong> {{ prompt }}</p>
+        </div>
+        {% endif %}
+
+        {% if uploaded_image %}
+        <div class="image-container">
+            <h2>Uploaded Image:</h2>
+            <img src="{{ url_for('static', filename='uploads/' + uploaded_image) }}" 
+                 alt="Uploaded Image" class="generated-image">
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="error">
+            {{ error }}
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            document.getElementById('generate-tab').style.display = 'none';
+            document.getElementById('upload-tab').style.display = 'none';
+            
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.getElementById(tabName + '-tab').style.display = 'block';
+            event.target.classList.add('active');
+        }
+    </script>
+</body>
+</html>

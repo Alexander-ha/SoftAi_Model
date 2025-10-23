@@ -2,3 +2,6 @@
 ml-env/
 build/
 .venv/
+__pycache__/
+*.spec
+.pytest_cache/
