@@ -6,7 +6,7 @@ set(HF_TOKEN "" CACHE STRING "Hugging Face API token")
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
 
-# Функция создания виртуального окружения и установки пакетов
+# :::: FUNCTION FOR CREATING VENV :::: 
 function(create_venv venv_dir)
     if(EXISTS ${venv_dir})
         message(STATUS "Virtual environment already exists in ${venv_dir}")
@@ -23,7 +23,7 @@ function(create_venv venv_dir)
         message(FATAL_ERROR "Failed to create virtual environment!")
     endif()
 
-    # Определяем пути
+    # :::: ADDING PATHS ::::
     if(WIN32)
         set(PIP_PATH "${venv_dir}/Scripts/pip.exe")
         set(PYTHON_PATH "${venv_dir}/Scripts/python.exe")
@@ -32,10 +32,10 @@ function(create_venv venv_dir)
         set(PYTHON_PATH "${venv_dir}/bin/python")
     endif()
 
-    # Ждем создания виртуального окружения
+    # :::: AWAITING FOR VIRTUAL ENV UPDATE ::::
     execute_process(COMMAND ${CMAKE_COMMAND} -E sleep 2)
 
-    # Обновляем pip
+    # PIP upgrade
     message(STATUS "Upgrading pip...")
     execute_process(
         COMMAND ${PIP_PATH} install --upgrade pip
@@ -44,7 +44,7 @@ function(create_venv venv_dir)
         ERROR_QUIET
     )
 
-    # Устанавливаем зависимости из requirements.txt
+    # :::: requirements.txt INITIAL INSTALLATION ::::
     if(EXISTS ${CMAKE_SOURCE_DIR}/requirements.txt)
         message(STATUS "Installing dependencies from requirements.txt...")
         execute_process(
@@ -58,7 +58,7 @@ function(create_venv venv_dir)
         endif()
     endif()
 
-    # Устанавливаем совместимые версии поэтапно
+    # ::::LOOKING FOR COMPATIBLE VERSIONS ::::
     message(STATUS "Installing compatible packages...")
     
     message(STATUS "Step 1: Installing compatible NumPy...")
@@ -118,7 +118,7 @@ function(create_venv venv_dir)
         message(WARNING "Failed to install web dependencies")
     endif()
 
-    # ДОБАВЛЕНО: Установка тестовых зависимостей
+    # :::: TEST DEPENDENCIES INSTALLING ::::
     message(STATUS "Step 5: Installing test dependencies...")
     execute_process(
         COMMAND ${PIP_PATH} install pytest
@@ -130,7 +130,7 @@ function(create_venv venv_dir)
         message(WARNING "Failed to install pytest")
     endif()
 
-    # Финальная проверка
+    # ::::PACK CHECK::::
     file(WRITE ${CMAKE_BINARY_DIR}/final_check.py "
 try:
     import torch
@@ -182,9 +182,8 @@ function(setup_huggingface_token)
     endif()
 endfunction()
 
-# Создаем необходимые файлы и директории
+# ::::LEGACY FUNC WILL BE DEPRECATED ::::
 function(setup_project_structure)
-    # Создаем базовую структуру static
     execute_process(
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/static/uploads
     )
@@ -192,12 +191,12 @@ function(setup_project_structure)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/static/generated
     )
     
-    # Создаем placeholder файлы для static
+    
     file(WRITE ${CMAKE_SOURCE_DIR}/static/.gitkeep "")
     file(WRITE ${CMAKE_SOURCE_DIR}/static/uploads/.gitkeep "")
     file(WRITE ${CMAKE_SOURCE_DIR}/static/generated/.gitkeep "")
     
-    # Создаем __init__.py в src чтобы сделать его пакетом
+    
     file(WRITE ${CMAKE_SOURCE_DIR}/src/__init__.py "# AI Model Package")
 endfunction()
 
@@ -213,7 +212,7 @@ else()
     set(PYTHON_PATH ${VENV_DIR}/bin/python)
 endif()
 
-# Цели для запуска приложения
+# ::::LAUNCH YOUR APPLICATION TARGETS::::
 add_custom_target(run_web
     COMMAND ${PYTHON_PATH} ${CMAKE_SOURCE_DIR}/main.py
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -226,7 +225,7 @@ add_custom_target(run_web_dev
     COMMENT "Running web interface on port 8001"
 )
 
-# Цели для тестирования
+# ::::TEEEEEST TARGETS::::
 add_custom_target(run_tests
     COMMAND ${PYTHON_PATH} -m pytest ${CMAKE_SOURCE_DIR}/tests -v
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
