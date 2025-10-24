@@ -1,3 +1,4 @@
+# Используем официальный образ Python
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y \
@@ -9,17 +10,15 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY CMakeLists.txt .
-COPY requirements.txt .
-COPY compatible_requirements.txt .
-COPY src/ ./src/
-COPY tests/ ./tests/
-COPY static/ ./static/
-COPY templates/ ./templates/
+COPY . .
 
 RUN python -m venv /app/venv
 RUN /app/venv/bin/pip install --upgrade pip
-RUN /app/venv/bin/pip install -r requirements.txt || /app/venv/bin/pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+RUN /app/venv/bin/pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cpu
+RUN /app/venv/bin/pip install huggingface-hub==0.19.4 diffusers==0.21.4 transformers==4.35.2 accelerate==0.24.1
+RUN /app/venv/bin/pip install flask==2.3.3 werkzeug==2.3.7 pillow==9.5.0
+RUN /app/venv/bin/pip install pytest
 
 RUN mkdir -p static/uploads static/generated
 
@@ -30,6 +29,5 @@ EXPOSE 8001
 
 ENV PYTHONPATH=/app
 ENV FLASK_ENV=production
-ENV VENV_DIR=/app/venv
 
 ENTRYPOINT ["docker-entrypoint.sh"]
