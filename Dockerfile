@@ -1,7 +1,5 @@
-# Используем официальный образ Python
 FROM python:3.11-slim
 
-# Устанавливаем системные зависимости
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
@@ -11,11 +9,17 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY . .
+COPY CMakeLists.txt .
+COPY requirements.txt .
+COPY compatible_requirements.txt .
+COPY src/ ./src/
+COPY tests/ ./tests/
+COPY static/ ./static/
+COPY templates/ ./templates/
 
-RUN mkdir -p build && cd build && \
-    cmake -DWITH_HF_TOKEN=OFF .. && \
-    cmake --build . --target run_tests
+RUN python -m venv /app/venv
+RUN /app/venv/bin/pip install --upgrade pip
+RUN /app/venv/bin/pip install -r requirements.txt || /app/venv/bin/pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
 RUN mkdir -p static/uploads static/generated
 
@@ -26,5 +30,6 @@ EXPOSE 8001
 
 ENV PYTHONPATH=/app
 ENV FLASK_ENV=production
+ENV VENV_DIR=/app/venv
 
 ENTRYPOINT ["docker-entrypoint.sh"]
