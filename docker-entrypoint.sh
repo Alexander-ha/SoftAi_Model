@@ -16,7 +16,7 @@ fi
 
 if [ "$#" -eq 0 ]; then
     echo "Starting web interface..."
-    exec python /app/main.py --port 8001 --host 0.0.0.0
+    exec python /app/main.py --port 8001
 else
     exec "$@"
 fi
