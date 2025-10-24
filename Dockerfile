@@ -1,5 +1,7 @@
+# Используем официальный образ Python
 FROM python:3.11-slim
 
+# Устанавливаем системные зависимости
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
@@ -13,7 +15,7 @@ COPY . .
 
 RUN mkdir -p build && cd build && \
     cmake -DWITH_HF_TOKEN=OFF .. && \
-    cmake --build . --target venv_activate
+    cmake --build . --target run_tests
 
 RUN mkdir -p static/uploads static/generated
 

@@ -237,17 +237,22 @@ add_custom_target(venv_shell
     COMMENT "Virtual environment is ready at ${VENV_DIR}. Activate with:"
 )
 
+add_custom_target(venv_info
+    COMMENT "Virtual environment is ready at ${VENV_DIR}"
+)
+
 if(WIN32)
     add_custom_target(venv_activate
         COMMAND cmd.exe /c "echo Activate virtual environment: && echo ${VENV_DIR}\\Scripts\\activate"
-        COMMENT "Windows activation command printed above"
+        COMMENT "Windows activation command"
     )
 else()
     add_custom_target(venv_activate
-        COMMAND bash -c "echo 'Activate virtual environment:' && echo 'source ${VENV_DIR}/bin/activate'"
-        COMMENT "Linux activation command printed above"
+        COMMAND echo "Activate virtual environment:" && echo "source ${VENV_DIR}/bin/activate"
+        COMMENT "Linux activation command"
     )
 endif()
+
 
 message(STATUS "")
 message(STATUS "=== AI Image Generator Setup Complete ===")
